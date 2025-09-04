@@ -15,6 +15,8 @@ Then, execute:
 $ python -m pip install python-osc
 $ python -m pip install keyboard
 $ python -m pip install Timeloop
+$ python -m pip install numpy
+$ python -m pip install matplotlib
 ```
 
 ## TouchOSC
