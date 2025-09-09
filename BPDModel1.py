@@ -1,4 +1,5 @@
 from Helpers.AbstractModel import AbstractModel
+import numpy as np
 
 class BPDModel1(AbstractModel):
     # --------------------------
@@ -7,6 +8,12 @@ class BPDModel1(AbstractModel):
     ALPHA:float = 0.1       # linear damping
     OMEGA2:float = 1.0      # restoring coefficient (ω²)
     B:float = -1.0          # nonlinear damping coeff
+
+    # --------------------------
+    # Constructor
+    # --------------------------
+    def __init__(self, mood:float=0.5, moodVelocity:float=0, treatmentEffect:float=0):
+        super().__init__(mood, moodVelocity, treatmentEffect)
 
     # --------------------------
     # ODE step (Euler integration)

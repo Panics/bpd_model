@@ -19,6 +19,11 @@ $ python -m pip install numpy
 $ python -m pip install matplotlib
 ```
 
+Or, all at once:
+```bash
+ $ python -m pip install python-osc, keyboard, Timeloop, numpy, matplotlib
+```
+
 ## TouchOSC
 
 - Install [TouchOSC](https://hexler.net/touchosc)

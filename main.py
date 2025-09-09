@@ -31,8 +31,8 @@ from BPDModel1 import BPDModel1
 from BPDTreatment1 import BPDTreatment1
 
 # Instantiate the bpd model and treatment logic to use
-_modelToUse:AbstractModel = BPDModel1()
-_modelUpdateInterval:float = 0.1
+_modelToUse:AbstractModel = BPDModel1(mood=0.5, moodVelocity=0, treatmentEffect=0)
+_modelUpdateInterval:float = 0.01
 _treatmentToUse:AbstractTreatment = BPDTreatment1()
 
 # ------------------------------------------------------------------------------------------------------------
@@ -41,7 +41,7 @@ _oscServerIP:str = "127.0.0.1"
 _oscServerListenPort:int = 2323
 _oscMessageDestinationIP = "127.0.0.1"
 _oscMessageDestinationPort = 2324
-_debugPlogIncomingOSC:bool = False
+_debugLogIncomingOSC:bool = True
 _oscSendInterval:float = 1
 
 # ------------------------------------------------------------------------------------------------------------
@@ -59,50 +59,50 @@ _mainIsRunning:bool = True
 # ------------------------------------------------------------------------------------------------------------
 def handleOscMessage_Angle(address, *args):
     global _imuData
-    global _debugPlogIncomingOSC
+    global _debugLogIncomingOSC
     _imuData.xAngle = args[0]
     _imuData.yAngle = args[1]
     _imuData.zAngle = args[2]
-    if _debugPlogIncomingOSC:
-        print(f"{address}: {args}")
+    if _debugLogIncomingOSC:
+        print(f"Received OSC: {address}: {args}")
 
 # ------------------------------------------------------------------------------------------------------------
 def handleOscMessage_Gyro(address, *args):
     global _imuData
-    global _debugPlogIncomingOSC
+    global _debugLogIncomingOSC
     _imuData.xGyro = args[0]
     _imuData.yGyro = args[1]
     _imuData.zGyro = args[2]
-    if _debugPlogIncomingOSC:
-        print(f"{address}: {args}")
+    if _debugLogIncomingOSC:
+        print(f"Received OSC: {address}: {args}")
 
 # ------------------------------------------------------------------------------------------------------------
 def handleOscMessage_Accel(address, *args):
     global _imuData
-    global _debugPlogIncomingOSC
+    global _debugLogIncomingOSC
     _imuData.xAccel = args[0]
     _imuData.yAccel = args[1]
     _imuData.zAccel= args[2]
-    if _debugPlogIncomingOSC:
-        print(f"{address}: {args}")
+    if _debugLogIncomingOSC:
+        print(f"Received OSC: {address}: {args}")
 
 # ------------------------------------------------------------------------------------------------------------
 def handleOscMessage_AccelAngle(address, *args):
     global _imuData
-    global _debugPlogIncomingOSC
+    global _debugLogIncomingOSC
     _imuData.xAccelAngle = args[0]
     _imuData.yAccelAngle = args[1]
     _imuData.zAccelAngle= args[2]
-    if _debugPlogIncomingOSC:
-        print(f"{address}: {args}")
+    if _debugLogIncomingOSC:
+        print(f"Received OSC: {address}: {args}")
 
 # ------------------------------------------------------------------------------------------------------------
 def handleOscMessage_Temp(address, *args):
     global _imuData
-    global _debugPlogIncomingOSC
+    global _debugLogIncomingOSC
     _imuData.temp = args[0]
-    if _debugPlogIncomingOSC:
-        print(f"{address}: {args}")
+    if _debugLogIncomingOSC:
+        print(f"Received OSC: {address}: {args}")
 
 # ------------------------------------------------------------------------------------------------------------
 @_timeLoop.job(interval=timedelta(seconds=_oscSendInterval))
@@ -110,7 +110,7 @@ def sendOscMessages():
     global _oscClient
     global _modelToUse
     _oscClient.send_message("/Brandeis/BPD/Model", _modelToUse.ModelState.BpdMood)
-    print(f"sendOscMessages: {time.ctime()}, BPD model mood: {_modelToUse.ModelState.BpdMood}, BPD model mood velocity: {_modelToUse.ModelState.BpdMoodVelocity}, BPD model treatment effect: {_modelToUse.ModelState.BpdTreatmentEffect}")
+    print(f"Sent OSC: {time.ctime()}, BPD model mood: {_modelToUse.ModelState.BpdMood}, BPD model mood velocity: {_modelToUse.ModelState.BpdMoodVelocity}, BPD model treatment effect: {_modelToUse.ModelState.BpdTreatmentEffect}")
 
 # ------------------------------------------------------------------------------------------------------------
 @_timeLoop.job(interval=timedelta(seconds=_modelUpdateInterval))
@@ -177,7 +177,7 @@ def runPlotter():
         if not _plottingQueue.empty():
             message:ModelOutputData = _plottingQueue.get()
             modelPlot.UpdatePlot(message)
-        plt.pause(0.1)
+        plt.pause(_modelUpdateInterval)
     print('Exiting runPlotter()')
 
 # ------------------------------------------------------------------------------------------------------------

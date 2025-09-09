@@ -5,7 +5,7 @@ class AbstractModel:
     # --------------------------
     # State variables
     # --------------------------
-    _modelState:ModelOutputData = ModelOutputData()
+    _modelState:ModelOutputData
 
     # --------------------------
     # State variable Property Getters
@@ -17,3 +17,9 @@ class AbstractModel:
     @abstractmethod
     def step(self, treatmentEffect:float, DT:float=0.04):
         pass
+
+    # --------------------------
+    # Constructor
+    # --------------------------
+    def __init__ (self, mood:float=0, moodVelocity:float=0, treatmentEffect:float=0):
+        self._modelState = ModelOutputData(mood, moodVelocity, treatmentEffect)
