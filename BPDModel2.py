@@ -72,7 +72,7 @@ class BPDModel2(AbstractModel):
                  lamb=4,
                  dt=0.001,
                  tmin=1.0, tmax=5.0,
-                 injectMode = 'add_to_lambda',
+                 injectMode = 'tilt_to_PN',
                  delay_seconds=0.02,
                  g_gain=0.2,
                  P0=100.0, 
@@ -194,7 +194,7 @@ class BPDModel2(AbstractModel):
         EB_next = P_next / (P_next + N_next) if (P_next + N_next) > 1e-9 else 0.5
         EB_next = min(1.0, max(0.0, EB_next))
 
-        self.ModelState.BpdMood = EB_next
+        self.ModelState.BpdMood = 2 * (EB_next - 0.5)
         self.ModelState.BpdTreatmentEffect = treatmentEffect
 
         return EB_next, P_next, N_next

@@ -42,7 +42,7 @@ _oscServerIP:str = "127.0.0.1"
 _oscServerListenPort:int = 2323
 _oscMessageDestinationIP = "127.0.0.1"
 _oscMessageDestinationPort = 2324
-_debugLogIncomingOSC:bool = True
+_debugLogIncomingOSC:bool = False
 _oscSendInterval:float = 1
 
 # ------------------------------------------------------------------------------------------------------------
