@@ -1,11 +1,36 @@
 from Helpers.AbstractTreatment import AbstractTreatment
 from Helpers.ImuData import ImuData
-import numpy as np
 
 class BPDTreatment1(AbstractTreatment):
-     _KGAMMA:float = 0.015        # IMU scaling
-     _GAMMA_MAX:float = 5.0     # Bound treatment effect
+   # ------------------------------------------------------------------------------------------------------------
+   _x_angle_ratio:float = 0.5             # IMU scaling
+   _x_angle_velocity_ratio:float = 0.0    # IMU scaling
+ 
+   # ------------------------------------------------------------------------------------------------------------
+   @property
+   def XAngleRatio(self):
+      return self._x_angle_ratio
+    
+   @XAngleRatio.setter
+   def XAngleRatio(self, val):
+      self._x_angle_ratio = val
 
-     def CalculateTreatmentEffect(self, imuData:ImuData)->float :
-        treatmentEffect:float = np.clip(imuData.xAngle*self._KGAMMA, -self._GAMMA_MAX, self._GAMMA_MAX)
-        return treatmentEffect
+   # ------------------------------------------------------------------------------------------------------------
+   @property
+   def XAngleVelocityRatio(self):
+      return self._x_angle_velocity_ratio
+    
+   @XAngleVelocityRatio.setter
+   def XAngleVelocityRatio(self, val):
+      self._x_angle_velocity_ratio = val
+
+   # ------------------------------------------------------------------------------------------------------------
+   def __init__(self, XAngleRatio:float = 0.5, XAngleVelocityRatio:float=0, TreatmentScale:float=0.01):
+      super().__init__(TreatmentScale=TreatmentScale)
+      self._x_angle_ratio = XAngleRatio
+      self._x_angle_velocity_ratio = XAngleVelocityRatio
+
+   # ------------------------------------------------------------------------------------------------------------
+   def CalculateTreatmentEffect(self, imuData:ImuData)->float :
+      treatmentEffect:float = self.TreatmentScale * (imuData.xAngle*self._x_angle_ratio + imuData.xAccelAngle*self._x_angle_velocity_ratio)
+      return treatmentEffect

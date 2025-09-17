@@ -21,5 +21,5 @@ class AbstractModel:
     # --------------------------
     # Constructor
     # --------------------------
-    def __init__ (self, mood:float=0, moodVelocity:float=0, treatmentEffect:float=0):
-        self._modelState = ModelOutputData(mood, moodVelocity, treatmentEffect)
+    def __init__ (self, mood:float=0, treatmentEffect:float=0):
+        self._modelState = ModelOutputData(mood, treatmentEffect)

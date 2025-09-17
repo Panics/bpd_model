@@ -8,19 +8,21 @@ class BPDModel1(AbstractModel):
     ALPHA:float = 0.1       # linear damping
     OMEGA2:float = 1.0      # restoring coefficient (ω²)
     B:float = -1.0          # nonlinear damping coeff
+    _moodVelocity:float = 0
 
     # --------------------------
     # Constructor
     # --------------------------
-    def __init__(self, mood:float=0.5, moodVelocity:float=0, treatmentEffect:float=0):
-        super().__init__(mood, moodVelocity, treatmentEffect)
+    def __init__(self, initialMood:float=0.5, initialMoodVelocity:float=0, initialTreatmentEffect:float=0):
+        super().__init__(initialMood, initialTreatmentEffect)
+        self._moodVelocity = initialMoodVelocity
 
     # --------------------------
     # ODE step (Euler integration)
     # --------------------------
     def step(self, treatmentEffect:float, DT:float=0.04):
         curMood:float = super().ModelState.BpdMood
-        curMoodVel:float = super().ModelState.BpdMoodVelocity
+        curMoodVel:float = self._moodVelocity
 
         dMood:float = curMoodVel
         dMoodVelocity:float = -self.ALPHA * curMoodVel - self.OMEGA2 * curMood - self.B * (curMood**2) * curMoodVel + treatmentEffect
@@ -28,7 +30,7 @@ class BPDModel1(AbstractModel):
         newMood:float = curMood + dMood * DT
         newMoodVelocity:float = curMoodVel + dMoodVelocity * DT
 
+        self._moodVelocity = newMoodVelocity
         super().ModelState.BpdMood = newMood
-        super().ModelState.BpdMoodVelocity = newMoodVelocity
         super().ModelState.BpdTreatmentEffect = treatmentEffect
     

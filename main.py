@@ -28,10 +28,11 @@ from Helpers.ImuData import ImuData
 # ------------------------------------------------------------------------------------------------------------
 # The bpd model and treatment logic
 from BPDModel1 import BPDModel1
+from BPDModel2 import BPDModel2
 from BPDTreatment1 import BPDTreatment1
 
 # Instantiate the bpd model and treatment logic to use
-_modelToUse:AbstractModel = BPDModel1(mood=0.5, moodVelocity=0, treatmentEffect=0)
+_modelToUse:AbstractModel = BPDModel2(dt=0.0015, delay_seconds=0.02, g_gain=0.07, lamb=.5)
 _modelUpdateInterval:float = 0.01
 _treatmentToUse:AbstractTreatment = BPDTreatment1()
 
@@ -109,8 +110,8 @@ def handleOscMessage_Temp(address, *args):
 def sendOscMessages():
     global _oscClient
     global _modelToUse
-    _oscClient.send_message("/Brandeis/BPD/Model", _modelToUse.ModelState.BpdMood)
-    print(f"Sent OSC: {time.ctime()}, BPD model mood: {_modelToUse.ModelState.BpdMood}, BPD model mood velocity: {_modelToUse.ModelState.BpdMoodVelocity}, BPD model treatment effect: {_modelToUse.ModelState.BpdTreatmentEffect}")
+    _oscClient.send_message("/Brandeis/BPD/Model", [_modelToUse.ModelState.BpdMood, _modelToUse.ModelState.BpdTreatmentEffect])
+    print(f"Sent OSC: {time.ctime()}, BPD model mood: {_modelToUse.ModelState.BpdMood}, Treatment model effect: {_modelToUse.ModelState.BpdTreatmentEffect}")
 
 # ------------------------------------------------------------------------------------------------------------
 @_timeLoop.job(interval=timedelta(seconds=_modelUpdateInterval))
@@ -119,6 +120,25 @@ def updateBPDModel():
     global _imuData
     _modelToUse.step(_treatmentToUse.CalculateTreatmentEffect(_imuData), DT=_modelUpdateInterval)
     _plottingQueue.put(_modelToUse.ModelState)
+
+# ------------------------------------------------------------------------------------------------------------
+def on_key(event):
+    global _modelToUse, _treatmentToUse
+    
+    if event.key == 'l': _modelToUse.lamb = max(0.0, _modelToUse.lamb - 0.05)
+    elif event.key == 'L': _modelToUse.lamb += 0.05
+    elif event.key == 'g': _modelToUse.g_gain = max(0.0, _modelToUse.g_gain - 0.005)
+    elif event.key == 'G': _modelToUse.g_gain += 0.005
+    elif event.key == 'k': _treatmentToUse.TreatmentScale = max(0.0, _treatmentToUse.TreatmentScale - 0.0005)
+    elif event.key == 'K': _treatmentToUse.TreatmentScale += 0.0005
+    elif event.key == 't': _modelToUse.dt = max(0.0005, _modelToUse.dt - 0.0005); _modelToUse.reset()
+    elif event.key == 'T': _modelToUse.dt += 0.0005; _modelToUse.reset()
+    elif event.key == 'm':
+        modes = ['add_to_lambda', 'add_to_g', 'add_to_P', 'add_to_EB', 'tilt_to_PN']
+        _modelToUse.InjectMode = modes[(modes.index(_modelToUse.InjectMode) + 1) % len(modes)]
+    elif event.key == 'r': _modelToUse.reset()
+
+    print(f"λ={_modelToUse.lamb:.2f}, g={_modelToUse.g_gain:.2f}, dt={_modelToUse.dt:.4f}, mode={_modelToUse.InjectMode}, treatment scale={_treatmentToUse.TreatmentScale}")
 
 # ------------------------------------------------------------------------------------------------------------
 async def mainLoop():
@@ -172,6 +192,8 @@ def run_event_loop(loop):
 def runPlotter():
     print('Entering runPlotter()')
     modelPlot:ModelPlot = ModelPlot()
+    
+    modelPlot.Fig.canvas.mpl_connect('key_press_event', on_key)
 
     while _mainIsRunning:
         if not _plottingQueue.empty():
