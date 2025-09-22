@@ -21,7 +21,7 @@ $ python -m pip install matplotlib
 
 Or, all at once:
 ```bash
- $ python -m pip install python-osc, keyboard, Timeloop, numpy, matplotlib
+ $ python -m pip install python-osc keyboard Timeloop numpy matplotlib
 ```
 
 ## TouchOSC
