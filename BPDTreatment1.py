@@ -37,8 +37,14 @@ class BPDTreatment1(AbstractTreatment):
    
    # ------------------------------------------------------------------------------------------------------------
    def on_key(self, event):
+      printMsg:bool = False      
       
-      if event.key == 'k': self.TreatmentScale = max(0.0, self.TreatmentScale - 0.0005)
-      elif event.key == 'K': self.TreatmentScale += 0.0005
+      if event.key == 'k': 
+         self.TreatmentScale = max(0.0, self.TreatmentScale - 0.0005)
+         printMsg=True
+      elif event.key == 'K': 
+         self.TreatmentScale += 0.0005
+         printMsg=True
 
-      print(f"treatment scale={self.TreatmentScale}")
+      if printMsg:
+         print(f"treatment scale={self.TreatmentScale}")

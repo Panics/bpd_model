@@ -205,17 +205,35 @@ class BPDModel2(AbstractModel):
     
     # ------------------------------------------------------------------------------------------------------------
     def on_key(self, event):
-        global _modelToUse, _treatmentToUse
-        
-        if event.key == 'l': self.lamb = max(0.0, self.lamb - 0.05)
-        elif event.key == 'L': self.lamb += 0.05
-        elif event.key == 'g': self.g_gain = max(0.0, self.g_gain - 0.005)
-        elif event.key == 'G': self.g_gain += 0.005
-        elif event.key == 't': self.dt = max(0.0005, self.dt - 0.0005); self.reset()
-        elif event.key == 'T': self.dt += 0.0005; self.reset()
+        printMsg:bool = False
+
+        if event.key == 'l': 
+            self.lamb = max(0.0, self.lamb - 0.05)
+            printMsg = True
+        elif event.key == 'L': 
+            self.lamb += 0.05
+            printMsg = True
+        elif event.key == 'g': 
+            self.g_gain = max(0.0, self.g_gain - 0.005)
+            printMsg = True
+        elif event.key == 'G': 
+            self.g_gain += 0.005
+            printMsg = True
+        elif event.key == 't': 
+            self.dt = max(0.0005, self.dt - 0.0005)
+            self.reset()
+            printMsg = True
+        elif event.key == 'T': 
+            self.dt += 0.0005
+            self.reset()
+            printMsg = True
         elif event.key == 'm':
             modes = ['add_to_lambda', 'add_to_g', 'add_to_P', 'add_to_EB', 'tilt_to_PN']
             self.InjectMode = modes[(modes.index(self.InjectMode) + 1) % len(modes)]
-        elif event.key == 'r': self.reset()
+            printMsg = True
+        elif event.key == 'r': 
+            self.reset()
+            printMsg = True
 
-        print(f"λ={self.lamb:.2f}, g={self.g_gain:.2f}, dt={self.dt:.4f}, mode={self.InjectMode}")
+        if printMsg:
+            print(f"λ={self.lamb:.2f}, g={self.g_gain:.2f}, dt={self.dt:.4f}, mode={self.InjectMode}")
