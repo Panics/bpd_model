@@ -15,10 +15,17 @@ class AbstractTreatment:
       self._treatment_scale = val
 
    # ------------------------------------------------------------------------------------------------------------
+   # Constructor
    def __init__(self, TreatmentScale:float=0.01):
       self._treatment_scale = TreatmentScale
 
    # ------------------------------------------------------------------------------------------------------------
+   # Abstract method to calculate treatment effect based on IMU state data
    @abstractmethod
    def CalculateTreatmentEffect(self, imuData:ImuData)->float :
-    pass
+      pass
+
+   # ------------------------------------------------------------------------------------------------------------
+   # Method to handle keypress
+   def on_key(self, event):
+      pass

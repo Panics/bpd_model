@@ -14,8 +14,17 @@ class AbstractModel:
     def ModelState(self):
         return self._modelState
     
+    # --------------------------
+    # Abstract method to update the model state
+    # --------------------------
     @abstractmethod
     def step(self, treatmentEffect:float, DT:float=0.04):
+        pass
+
+    # --------------------------
+    # Method to handle key press
+    # --------------------------
+    def on_key(self, event):
         pass
 
     # --------------------------

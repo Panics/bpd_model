@@ -34,3 +34,11 @@ class BPDTreatment1(AbstractTreatment):
    def CalculateTreatmentEffect(self, imuData:ImuData)->float :
       treatmentEffect:float = self.TreatmentScale * (imuData.xAngle*self._x_angle_ratio + imuData.xAccelAngle*self._x_angle_velocity_ratio)
       return treatmentEffect
+   
+   # ------------------------------------------------------------------------------------------------------------
+   def on_key(self, event):
+      
+      if event.key == 'k': self.TreatmentScale = max(0.0, self.TreatmentScale - 0.0005)
+      elif event.key == 'K': self.TreatmentScale += 0.0005
+
+      print(f"treatment scale={self.TreatmentScale}")

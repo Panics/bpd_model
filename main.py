@@ -27,21 +27,20 @@ from Helpers.ImuData import ImuData
 
 # ------------------------------------------------------------------------------------------------------------
 # The bpd model and treatment logic
-from BPDModel1 import BPDModel1
 from BPDModel2 import BPDModel2
 from BPDTreatment1 import BPDTreatment1
 
 # Instantiate the bpd model and treatment logic to use
-_modelToUse:AbstractModel = BPDModel2(dt=0.0015, delay_seconds=0.02, g_gain=0.07, lamb=.5)
-_modelUpdateInterval:float = 0.01
-_treatmentToUse:AbstractTreatment = BPDTreatment1()
+_modelUpdateInterval:float = 0.0015
+_modelToUse:BPDModel2 = BPDModel2(dt=_modelUpdateInterval, delay_seconds=0.02, g_gain=0.07, lamb=0.5)
+_treatmentToUse:BPDTreatment1 = BPDTreatment1(XAngleRatio=0.5, XAngleVelocityRatio=0.0, TreatmentScale=0.001)
 
 # ------------------------------------------------------------------------------------------------------------
 # configuration of OSC sending/receiving
 _oscServerIP:str = "127.0.0.1"
 _oscServerListenPort:int = 2323
-_oscMessageDestinationIP = "127.0.0.1"
-_oscMessageDestinationPort = 2324
+_oscMessageDestinationIP = "255.255.255.255"
+_oscMessageDestinationPort = 2323
 _debugLogIncomingOSC:bool = False
 _oscSendInterval:float = 1
 
@@ -50,7 +49,7 @@ _oscDispatcher:Dispatcher = Dispatcher()
 _oscServer:AsyncIOOSCUDPServer
 _oscTransport:BaseTransport
 _oscProtocol:DatagramProtocol
-_oscClient:SimpleUDPClient = SimpleUDPClient(_oscMessageDestinationIP, _oscMessageDestinationPort)
+_oscClient:SimpleUDPClient = SimpleUDPClient(address=_oscMessageDestinationIP, port=_oscMessageDestinationPort, allow_broadcast=True)
 _timeLoop:Timeloop = Timeloop()
 
 _imuData:ImuData = ImuData()
@@ -122,25 +121,6 @@ def updateBPDModel():
     _plottingQueue.put(_modelToUse.ModelState)
 
 # ------------------------------------------------------------------------------------------------------------
-def on_key(event):
-    global _modelToUse, _treatmentToUse
-    
-    if event.key == 'l': _modelToUse.lamb = max(0.0, _modelToUse.lamb - 0.05)
-    elif event.key == 'L': _modelToUse.lamb += 0.05
-    elif event.key == 'g': _modelToUse.g_gain = max(0.0, _modelToUse.g_gain - 0.005)
-    elif event.key == 'G': _modelToUse.g_gain += 0.005
-    elif event.key == 'k': _treatmentToUse.TreatmentScale = max(0.0, _treatmentToUse.TreatmentScale - 0.0005)
-    elif event.key == 'K': _treatmentToUse.TreatmentScale += 0.0005
-    elif event.key == 't': _modelToUse.dt = max(0.0005, _modelToUse.dt - 0.0005); _modelToUse.reset()
-    elif event.key == 'T': _modelToUse.dt += 0.0005; _modelToUse.reset()
-    elif event.key == 'm':
-        modes = ['add_to_lambda', 'add_to_g', 'add_to_P', 'add_to_EB', 'tilt_to_PN']
-        _modelToUse.InjectMode = modes[(modes.index(_modelToUse.InjectMode) + 1) % len(modes)]
-    elif event.key == 'r': _modelToUse.reset()
-
-    print(f"λ={_modelToUse.lamb:.2f}, g={_modelToUse.g_gain:.2f}, dt={_modelToUse.dt:.4f}, mode={_modelToUse.InjectMode}, treatment scale={_treatmentToUse.TreatmentScale}")
-
-# ------------------------------------------------------------------------------------------------------------
 async def mainLoop():
     global _timeLoop
     print('Starting main loop - press and hold ESC/SPACE to exit')
@@ -148,6 +128,11 @@ async def mainLoop():
     while(not keyboard.is_pressed('Esc') and not keyboard.is_pressed('Space')):
         await asyncio.sleep(0.1)
     _timeLoop.stop()
+
+# ------------------------------------------------------------------------------------------------------------
+def on_key(event):
+    _modelToUse.on_key(event)
+    _treatmentToUse.on_key(event)
 
 # ------------------------------------------------------------------------------------------------------------
 async def mainInit():

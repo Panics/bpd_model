@@ -37,10 +37,6 @@ Or, all at once:
 - The 4 sets of faders represent the IMU data received (in OSC messages) from the arduino
 - The knob represents the BPD Model data received from the python script
 
-```
-Note: For now, only the BPD Model value is in the correct range [-1, 1]. The IMU data that is simulated by moving the faders is in the range [0, 1]. This will likely change in future iterations on the codebase.
-```
-
 # Running the pyton script
 
 The python script is [main.py](./main.py). This script provides a skeletal implementation with the following:
@@ -59,46 +55,151 @@ When you run the script, you should see the BPD Model knob update in TouchOSC, b
 
 Press and hold either ESC or Space to exit the script.
 
-# Modifying python code
+# How the python code works
 
-## Modifying placeholder code: BPD model
+## BPD model and treatment
 
-Find and modify the following method to run the BPD model. The model's output, a value in the range [-1, 1] capturing the current mental state, should be written to `_modelOutputData.BpdValue`. In the placeholder code below, a random value is written.
+The following code instantiates the BPD model and treatment to use. Here it is `BPDModel2` which is based on the `ProfessorModel` from the code that Vivek sent me. You can see how initial values are being provided when instantiating `BPDModel1` and `BPDTreatment1`. 
 
 ```python
 # ------------------------------------------------------------------------------------------------------------
-@_timeLoop.job(interval=timedelta(seconds=0.1))
+# The bpd model and treatment logic
+from BPDModel2 import BPDModel2
+from BPDTreatment1 import BPDTreatment1
+
+# Instantiate the bpd model and treatment logic to use
+_modelUpdateInterval:float = 0.0015
+_modelToUse:BPDModel2 = BPDModel2(dt=_modelUpdateInterval, delay_seconds=0.02, g_gain=0.07, lamb=0.5)
+_treatmentToUse:BPDTreatment1 = BPDTreatment1(XAngleRatio=0.5, XAngleVelocityRatio=0.0, TreatmentScale=0.001)
+
+```
+The value of the global variable `_modelUpdateInterval` shown above determines how often the model code is run in python, as well as the `dt` parameter with which the model formula update themselves.
+
+Below is the python code that 'glues' the bpd model, treatment, arduino IMU data handling, and graph plotting code together:
+
+```python
+# ------------------------------------------------------------------------------------------------------------
+@_timeLoop.job(interval=timedelta(seconds=_modelUpdateInterval))
 def updateBPDModel():
-    global _modelOutputData
-    _modelOutputData.BpdValue = random.uniform(-1,1)
+    global _modelToUse
+    global _imuData
+    _modelToUse.step(_treatmentToUse.CalculateTreatmentEffect(_imuData), DT=_modelUpdateInterval)
+    _plottingQueue.put(_modelToUse.ModelState)
+
 ```
 
-## Modifying placeholder code: Mapping IMU OSC parameters 
+The code that sends / receives OSC messages runs separately. OSC messages are sent periodically (at a slower rate than the model update code)
 
-The following methods have placeholder code that is called whenever IMU data is received via OSC. For now, this placeholder code only prints the message contents to screen. Change this code as needed to grab whatever the parameters of interest are, and store them in a global variable. The `updateBPDModel()` method can then refer to those global variables, and inject them into the model the next time that the model is updated.
+```python
+# ------------------------------------------------------------------------------------------------------------
+@_timeLoop.job(interval=timedelta(seconds=_oscSendInterval))
+def sendOscMessages():
+    global _oscClient
+    global _modelToUse
+    _oscClient.send_message("/Brandeis/BPD/Model", [_modelToUse.ModelState.BpdMood, _modelToUse.ModelState.BpdTreatmentEffect])
+    print(f"Sent OSC: {time.ctime()}, BPD model mood: {_modelToUse.ModelState.BpdMood}, Treatment model effect: {_modelToUse.ModelState.BpdTreatmentEffect}")
+
+```
+
+## Tracking IMU state 
+
+The following methods are in place for receiving OSC messages (sent by the Arduino) with different types of IMU data. What the code does is place the incoming data into a global `state variable` called `_imuData`. This global variable exposes properties to hold any type of data that the IMU provides (i.e., angle, gyro, temperature, etc). The 'glue code' mentioned above, just passes this global state variable to the code that updates the model, or calculates the treatment effect(s).
 
 ```python
 # ------------------------------------------------------------------------------------------------------------
 def handleOscMessage_Angle(address, *args):
-    print(f"{address}: {args}")
+    global _imuData
+    global _debugLogIncomingOSC
+    _imuData.xAngle = args[0]
+    _imuData.yAngle = args[1]
+    _imuData.zAngle = args[2]
+    if _debugLogIncomingOSC:
+        print(f"Received OSC: {address}: {args}")
 
 # ------------------------------------------------------------------------------------------------------------
 def handleOscMessage_Gyro(address, *args):
-    print(f"{address}: {args}")
+    global _imuData
+    global _debugLogIncomingOSC
+    _imuData.xGyro = args[0]
+    _imuData.yGyro = args[1]
+    _imuData.zGyro = args[2]
+    if _debugLogIncomingOSC:
+        print(f"Received OSC: {address}: {args}")
 
 # ------------------------------------------------------------------------------------------------------------
 def handleOscMessage_Accel(address, *args):
-    print(f"{address}: {args}")
+    global _imuData
+    global _debugLogIncomingOSC
+    _imuData.xAccel = args[0]
+    _imuData.yAccel = args[1]
+    _imuData.zAccel= args[2]
+    if _debugLogIncomingOSC:
+        print(f"Received OSC: {address}: {args}")
 
 # ------------------------------------------------------------------------------------------------------------
 def handleOscMessage_AccelAngle(address, *args):
-    print(f"{address}: {args}")
+    global _imuData
+    global _debugLogIncomingOSC
+    _imuData.xAccelAngle = args[0]
+    _imuData.yAccelAngle = args[1]
+    _imuData.zAccelAngle= args[2]
+    if _debugLogIncomingOSC:
+        print(f"Received OSC: {address}: {args}")
 
 # ------------------------------------------------------------------------------------------------------------
-def handleOscMessage_AccelTemp(address, *args):
-    print(f"{address}: {args}")
+def handleOscMessage_Temp(address, *args):
+    global _imuData
+    global _debugLogIncomingOSC
+    _imuData.temp = args[0]
+    if _debugLogIncomingOSC:
+        print(f"Received OSC: {address}: {args}")
 ```
 
 ```
-Note: the IMU's temperature data is received by this python script, but at this point not represented in TouchOSC
+Note: the IMU's temperature data is represented in the global state variable , but at this point not visualized in TouchOSC
 ```
+
+# Modifying code
+
+## BPD Model
+
+Two example BPD model implementations are currently provided: [BPDModel1.py](./BPDModel1.py) and [BPDModel2.py](./BPDModel2.py). You can create additional implementations (i.e., `BPDModel3.py`, `BPDModel4.py` and so on) as needed using this as a template. 
+
+All model code uses the base class `AbstractModel` (see [Helpers\AbstractModel.py](./Helpers/AbstractModel.py) for an example of how this base class is implemented). Your additional model code at minimum must implement a single abstract method, which updates the state of the model based on the current treatment effect and a time step. Optionally, your model can handle key presses (i.e. to change a model parameter at runtime):
+
+```python
+    # --------------------------
+    # Abstract method to update the model state
+    # --------------------------
+    @abstractmethod
+    def step(self, treatmentEffect:float, DT:float=0.04):
+        pass
+
+    # --------------------------
+    # Method to handle key press
+    # --------------------------
+    def on_key(self, event):
+        pass
+```
+
+As you can see in the two existing model implementations, you can add as many additional methods as needed, but this is the one that must be implemented
+
+The `AbstractTreatment` base class is similar, it defines two main functions that you can override to implement different mappings of IMU data to treatment effect:
+
+```python
+   # ------------------------------------------------------------------------------------------------------------
+   # Abstract method to calculate treatment effect based on IMU state data
+   @abstractmethod
+   def CalculateTreatmentEffect(self, imuData:ImuData)->float :
+      pass
+
+   # ------------------------------------------------------------------------------------------------------------
+   # Method to handle keypress
+   def on_key(self, event):
+      pass
+
+```
+See [BPDTreatment1.py](./BPDTreatment1.py) for an example implementation
+
+## BPD Treatment
+
