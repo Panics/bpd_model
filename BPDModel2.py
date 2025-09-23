@@ -147,7 +147,7 @@ class BPDModel2(AbstractModel):
     # --------------------------
     def step(self, treatmentEffect:float=0.0, DT:float=0.04):
 
-        self._dt = DT
+        # self._dt = DT
 
         cur_idx, delay_idx = self.current_indices()
         P_cur = self._P_buf[cur_idx]; N_cur = self._N_buf[cur_idx]
