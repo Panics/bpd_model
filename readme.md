@@ -1,8 +1,9 @@
 # Setting up
 
 ## Visual Studio Code
+- Install Python. This has been tested with Python 3.8
 - Install visual studio code
-- Install Pyton. This has been tested with Python 3.8
+- Install the python extension in visual studio code
 
 ### Creating a virtual environment for python
 In visual studio code, press ```CTRL+SHIFT+P``` to show all commands. Select ```Python: Create Environment```. Select the python interpreter that you have installed
@@ -37,7 +38,7 @@ Or, all at once:
 - The 4 sets of faders represent the IMU data received (in OSC messages) from the arduino
 - The knob represents the BPD Model data received from the python script
 
-# Running the pyton script
+# Running the python script
 
 The python script is [main.py](./main.py). This script provides a skeletal implementation with the following:
 

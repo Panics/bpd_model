@@ -1,5 +1,6 @@
 from Helpers.AbstractModel import AbstractModel
 import numpy as np
+import os
 from math import erf   # ✅ error function
 from Helpers.ModelOutputData import ModelOutputData
 
@@ -237,3 +238,12 @@ class BPDModel2(AbstractModel):
 
         if printMsg:
             print(f"λ={self.lamb:.2f}, g={self.g_gain:.2f}, dt={self.dt:.4f}, mode={self.InjectMode}")
+
+    # ------------------------------------------------------------------------------------------------------------
+    def print_key_info(self):
+        print(f'{os.path.basename(__file__)}: l/L  = reduce or increase lambda by 0.05')      
+        print(f'{os.path.basename(__file__)}: g/G  = reduce or increase gain by 0.0005')      
+        print(f'{os.path.basename(__file__)}: t/T  = reduce or increase dT by 0.0005')      
+        print(f'{os.path.basename(__file__)}: m  = cycle through inject modes (add_to_lambda, add_to_g, add_to_P, add_to_EB, tilt_to_PN)')
+        print(f'{os.path.basename(__file__)}: r  = reset')      
+      

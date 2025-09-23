@@ -29,3 +29,6 @@ class AbstractTreatment:
    # Method to handle keypress
    def on_key(self, event):
       pass
+
+   def print_key_info(self):
+      pass

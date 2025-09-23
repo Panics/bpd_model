@@ -12,6 +12,7 @@ from datetime import timedelta
 import asyncio
 import keyboard
 import time
+import os
 
 import matplotlib.pyplot as plt
 import threading
@@ -32,12 +33,12 @@ from BPDTreatment1 import BPDTreatment1
 
 # Instantiate the bpd model and treatment logic to use
 _modelUpdateInterval:float = 0.0015
-_modelToUse:BPDModel2 = BPDModel2(dt=_modelUpdateInterval, delay_seconds=0.02, g_gain=0.07, lamb=0.5)
-_treatmentToUse:BPDTreatment1 = BPDTreatment1(XAngleRatio=0.5, XAngleVelocityRatio=0.0, TreatmentScale=0.001)
+_modelToUse:AbstractModel = BPDModel2(dt=_modelUpdateInterval, delay_seconds=0.02, g_gain=0.07, lamb=0.5)
+_treatmentToUse:AbstractTreatment = BPDTreatment1(XAngleRatio=1, XAngleVelocityRatio=0.0, TreatmentScale=0.015)
 
 # ------------------------------------------------------------------------------------------------------------
 # configuration of OSC sending/receiving
-_oscServerIP:str = "127.0.0.1"
+_oscServerIP:str = "0.0.0.0"
 _oscServerListenPort:int = 2323
 _oscMessageDestinationIP = "255.255.255.255"
 _oscMessageDestinationPort = 2323
@@ -91,8 +92,8 @@ def handleOscMessage_AccelAngle(address, *args):
     global _imuData
     global _debugLogIncomingOSC
     _imuData.xAccelAngle = args[0]
+
     _imuData.yAccelAngle = args[1]
-    _imuData.zAccelAngle= args[2]
     if _debugLogIncomingOSC:
         print(f"Received OSC: {address}: {args}")
 
@@ -130,9 +131,22 @@ async def mainLoop():
     _timeLoop.stop()
 
 # ------------------------------------------------------------------------------------------------------------
-def on_key(event):
+def on_key(event:str):
+    global _debugLogIncomingOSC
+
     _modelToUse.on_key(event)
     _treatmentToUse.on_key(event)
+    
+    printMsg:bool=False
+    if event.key == 'd': 
+        _debugLogIncomingOSC = False
+        printMsg=True
+    elif event.key == 'D': 
+        _debugLogIncomingOSC = True
+        printMsg=True
+    
+    if printMsg:
+        print(f"Debug log incoming OSC messages = {_debugLogIncomingOSC}")
 
 # ------------------------------------------------------------------------------------------------------------
 async def mainInit():
@@ -189,6 +203,19 @@ def runPlotter():
 
 # ------------------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
+    # clear screen
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+    # print keys that the scripts respond to
+    print(f'Listing keys:')
+    print(f'=============')
+    _modelToUse.print_key_info()
+    _treatmentToUse.print_key_info()
+    print(f'{os.path.basename(__file__)}: d/D = debug printing incoming OSC message info off/on')      
+    print()
+    input('Press ENTER to continue...')
+    print()
+
     print('Initializing Main')
     new_loop = asyncio.new_event_loop()
     eventThread:threading.Thread = threading.Thread(target=run_event_loop, args=(new_loop,))

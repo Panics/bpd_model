@@ -1,3 +1,5 @@
+import os
+
 from Helpers.AbstractTreatment import AbstractTreatment
 from Helpers.ImuData import ImuData
 
@@ -36,7 +38,7 @@ class BPDTreatment1(AbstractTreatment):
       return treatmentEffect
    
    # ------------------------------------------------------------------------------------------------------------
-   def on_key(self, event):
+   def on_key(self, event:str):
       printMsg:bool = False      
       
       if event.key == 'k': 
@@ -48,3 +50,7 @@ class BPDTreatment1(AbstractTreatment):
 
       if printMsg:
          print(f"treatment scale={self.TreatmentScale}")
+
+   # ------------------------------------------------------------------------------------------------------------
+   def print_key_info(self):
+      print(f'{os.path.basename(__file__)}: k/K  = reduce or increase treatment scale by 0.0005')      

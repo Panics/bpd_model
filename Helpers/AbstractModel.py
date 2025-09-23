@@ -24,7 +24,10 @@ class AbstractModel:
     # --------------------------
     # Method to handle key press
     # --------------------------
-    def on_key(self, event):
+    def on_key(self, event:str):
+        pass
+
+    def print_key_info(self):
         pass
 
     # --------------------------
