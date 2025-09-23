@@ -18,11 +18,13 @@ $ python -m pip install keyboard
 $ python -m pip install Timeloop
 $ python -m pip install numpy
 $ python -m pip install matplotlib
+$ python -m pip install pyo
+$ python -m pip install wxpython
 ```
 
 Or, all at once:
 ```bash
- $ python -m pip install python-osc keyboard Timeloop numpy matplotlib
+ $ python -m pip install python-osc keyboard Timeloop numpy matplotlib pyo
 ```
 
 ## TouchOSC

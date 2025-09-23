@@ -3,6 +3,7 @@ from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 
 from Helpers.ModelOutputData import ModelOutputData
+from Helpers.ThereminOutputData import ThereminOutputData
 
 # ------------------------------------------------------------------------------------------------------------
      
@@ -18,9 +19,6 @@ class ModelPlot:
     # --------------------------
     _fig:plt.Figure
     _ax1:plt.Axes
-    _line1:plt.Line2D
-    _line2:plt.Line2D
-    _line3:plt.Line2D
 
     # --------------------------
     # State variable Property Getters
@@ -46,10 +44,7 @@ class ModelPlot:
         
         self._ax1.plot(list(range(len(self._moodHistory))), self._moodHistory, label="Mood")
         self._ax1.plot(list(range(len(self._treatmentHistory))), self._treatmentHistory, label="Treatment Effect")
-
         self._ax1.legend()
-
-        plt.pause(0.1)
     
     # --------------------------
     # Plotting setup
@@ -57,11 +52,6 @@ class ModelPlot:
     def __init__(self):
         plt.ion()
 
-        self._fig, self._ax1 = plt.subplots()
-
-        self._line1, = self._ax1.plot([], [], label="Mood")
-        self._line3, = self._ax1.plot([], [], label="Treatment Effect")
-        self._ax1.set_ylim(-5, 5)
-        self._ax1.set_ylabel("Mood & Treatment")
-        self._ax1.legend()
+        self._fig = plt.figure()
+        self._ax1 = self._fig.add_subplot()
 
