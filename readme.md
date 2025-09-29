@@ -72,8 +72,8 @@ from BPDTreatment1 import BPDTreatment1
 
 # Instantiate the bpd model and treatment logic to use
 _modelUpdateInterval:float = 0.0015
-_modelToUse:BPDModel2 = BPDModel2(dt=_modelUpdateInterval, delay_seconds=0.02, g_gain=0.07, lamb=0.5)
-_treatmentToUse:BPDTreatment1 = BPDTreatment1(XAngleRatio=0.5, XAngleVelocityRatio=0.0, TreatmentScale=0.001)
+_modelToUse:AbstractModel = BPDModel2(dt=_modelUpdateInterval, delay_seconds=0.02, g_gain=0.07, lamb=0.5)
+_treatmentToUse:AbstractTreatment = BPDTreatment1(XAngleRatio=0.5, XAngleVelocityRatio=0.0, TreatmentScale=0.001)
 
 ```
 The value of the global variable `_modelUpdateInterval` shown above determines how often the model code is run in python, as well as the `dt` parameter with which the model formula update themselves.

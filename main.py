@@ -29,6 +29,8 @@ from Helpers.ModelPlot import ModelPlot
 from Helpers.ImuData import ImuData
 from Helpers.Theremin import Theremin
 from Helpers.ThereminOutputData import ThereminOutputData
+from Helpers.TimeKeeper import TimeKeeper
+from BPDModel2ConfigurationTracker import BPDModel2ConfigurationTracker
 
 from Sound import list_output_devices
 from Sound.utils import midi_str_to_midi, midi_to_freq
@@ -36,13 +38,14 @@ from Sound.utils import midi_str_to_midi, midi_to_freq
 # ------------------------------------------------------------------------------------------------------------
 # The bpd model and treatment logic
 from BPDModel2 import BPDModel2
+from BPDModel2 import BPDModel2Configuration
 from BPDTreatment1 import BPDTreatment1
 
 # Instantiate the bpd model and treatment logic to use
 _modelUpdateInterval:float = 0.0015
-_modelToUse:AbstractModel = BPDModel2(dt=_modelUpdateInterval, delay_seconds=0.02, g_gain=0.07, lamb=0.5)
-_treatmentToUse:AbstractTreatment = BPDTreatment1(XAngleRatio=1, XAngleVelocityRatio=0.0, TreatmentScale=0.015)
-
+_modelToUse:BPDModel2 = BPDModel2(dt=_modelUpdateInterval, delay_seconds=0.02, g_gain=0.07, lamb=0.5)
+_treatmentToUse:BPDTreatment1 = BPDTreatment1(XAngleRatio=1, XAngleVelocityRatio=0.0, TreatmentScale=0.015)
+_modelConfigurationTracker:BPDModel2ConfigurationTracker = BPDModel2ConfigurationTracker()
 _theremin:Theremin
 
 # ------------------------------------------------------------------------------------------------------------
@@ -61,7 +64,7 @@ _oscTransport:BaseTransport
 _oscProtocol:DatagramProtocol
 _oscClient:SimpleUDPClient = SimpleUDPClient(address=_oscMessageDestinationIP, port=_oscMessageDestinationPort, allow_broadcast=True)
 _timeLoop:Timeloop = Timeloop()
-
+_timeKeeper:TimeKeeper = TimeKeeper()
 _imuData:ImuData = ImuData()
 _plottingQueue:Queue = Queue()
 _mainIsRunning:bool = True
@@ -128,8 +131,18 @@ def sendOscMessages():
 def updateBPDModel():
     global _modelToUse
     global _imuData
+    global _timeKeeper
+
+    # Update the configurationt that the model should use, based on the elapsed time
+    _modelToUse.CurrentConfiguration = _modelConfigurationTracker.GetActiveConfiguration(_timeKeeper.ElapsedTimeInSeconds())
+
+    # Update the model
     _modelToUse.step(_treatmentToUse.CalculateTreatmentEffect(_imuData), DT=_modelUpdateInterval)
+
+    # update the theremin
     _theremin.Update(_modelToUse.ModelState)
+
+    # Queue date for plotting (which happens in a different timeloop job that runs in parallel)
     _plottingQueue.put(_modelToUse.ModelState)
 
 # ------------------------------------------------------------------------------------------------------------
@@ -259,6 +272,56 @@ def parse_args(args):
     return opts, args
 
 # ------------------------------------------------------------------------------------------------------------
+def SetupModelConfigurations():
+    global _modelConfigurationTracker
+
+    # add an example configuration, active from t=0 seconds to t=10 seconds
+    _modelConfigurationTracker.AddConfiguration(
+                                                startTimeSeconds=0,
+                                                endTimeSeconds=10,
+                                                configuration = BPDModel2Configuration(
+                                                    g1=3.0, 
+                                                    g2=3.0,
+                                                    qPmin=10.0, 
+                                                    qPmax=10.0,
+                                                    qNmin=2.5, 
+                                                    qNmax=7.0,
+                                                    lamb=4,
+                                                    dt=0.001,
+                                                    tmin=1.0, 
+                                                    tmax=5.0,
+                                                    injectMode='tilt_to_PN',
+                                                    delay_seconds=0.02,
+                                                    g_gain=0.2                                                    
+                                                )
+                                                )
+
+    # add an example configuration, active from t=10 seconds to t=20 seconds
+    _modelConfigurationTracker.AddConfiguration(
+                                                startTimeSeconds=10,
+                                                endTimeSeconds=20,
+                                                configuration = BPDModel2Configuration(
+                                                    g1=3.0, 
+                                                    g2=3.0,
+                                                    qPmin=10.0, 
+                                                    qPmax=10.0,
+                                                    qNmin=2.5, 
+                                                    qNmax=7.0,
+                                                    lamb=4,
+                                                    dt=0.001,
+                                                    tmin=1.0, 
+                                                    tmax=5.0,
+                                                    injectMode='tilt_to_PN',
+                                                    delay_seconds=0.02,
+                                                    g_gain=0.2                                                    
+                                                )
+                                                )
+    
+    # beyond t=20 seconds, or in general, if no 'active' model configuration has been found, a default BPModel2Configuration will be used
+
+    _modelConfigurationTracker.PrintConfigurationInfo()
+
+# ------------------------------------------------------------------------------------------------------------
 if __name__ == '__main__':
     # clear screen
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -285,6 +348,8 @@ if __name__ == '__main__':
     print()
     input('Press ENTER to continue...')
     print()
+
+    SetupModelConfigurations()
 
     print('Instantiating Theremin')
     # create sound generator based on command line properties
