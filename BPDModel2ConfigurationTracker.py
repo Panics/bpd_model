@@ -26,6 +26,16 @@ class ConfigurationTimePeriod:
 class BPDModel2ConfigurationTracker:
     _configurations:list
 
+    _defaultConfiguration:BPDModel2Configuration
+
+    @property
+    def DefaultConfiguration(self):
+        return self._defaultConfiguration
+
+    @DefaultConfiguration.setter
+    def DefaultConfiguration(self, value):
+        self._defaultConfiguration = value
+
     def GetActiveConfiguration(self, timeSeconds:float=0) -> BPDModel2Configuration:
         tSec:float=timeSeconds
         for configuration in self._configurations:
@@ -33,7 +43,7 @@ class BPDModel2ConfigurationTracker:
                 if configuration.EndTimeSeconds > tSec:
 #                    print(f'Returning configuration for {configuration.StartTimeSeconds} - {configuration.EndTimeSeconds} time {tSec}')
                     return configuration.Configuration
-        return BPDModel2Configuration()
+        return self.DefaultConfiguration
 
     def AddConfiguration(self, configuration:BPDModel2Configuration, startTimeSeconds:float, endTimeSeconds:float):
         self._configurations.append(ConfigurationTimePeriod(configuration, startTimeSeconds, endTimeSeconds))
@@ -50,3 +60,4 @@ class BPDModel2ConfigurationTracker:
     
     def __init__(self):
         self._configurations = []
+        self._defaultConfiguration = BPDModel2Configuration()

@@ -24,7 +24,7 @@ $ python -m pip install wxpython
 
 Or, all at once:
 ```bash
- $ python -m pip install python-osc keyboard Timeloop numpy matplotlib pyo
+ $ python -m pip install python-osc keyboard Timeloop numpy matplotlib pyo wxpython
 ```
 
 ## TouchOSC

@@ -53,9 +53,9 @@ _theremin:Theremin
 _oscServerIP:str = "0.0.0.0"
 _oscServerListenPort:int = 2323
 _oscMessageDestinationIP = "255.255.255.255"
-_oscMessageDestinationPort = 2323
+_oscMessageDestinationPort = 2324
 _debugLogOSCActivity:bool = False
-_oscSendInterval:float = 1
+_oscSendInterval:float = 0.1
 
 # ------------------------------------------------------------------------------------------------------------
 _oscDispatcher:Dispatcher = Dispatcher()
@@ -124,7 +124,8 @@ def sendOscMessages():
     global _modelToUse
     global _theremin
     _oscClient.send_message("/Brandeis/BPD/Model", [_modelToUse.ModelState.BpdMood, _modelToUse.ModelState.BpdTreatmentEffect])
-    print(f"Sent OSC: {time.ctime()}, BPD model mood: {_modelToUse.ModelState.BpdMood}, Treatment model effect: {_modelToUse.ModelState.BpdTreatmentEffect}")
+    if _debugLogOSCActivity:
+        print(f"Sent OSC: {time.ctime()}, BPD model mood: {_modelToUse.ModelState.BpdMood}, Treatment model effect: {_modelToUse.ModelState.BpdTreatmentEffect}")
 
 # ------------------------------------------------------------------------------------------------------------
 @_timeLoop.job(interval=timedelta(seconds=_modelUpdateInterval))
@@ -162,18 +163,23 @@ def on_key(event:str):
     _treatmentToUse.on_key(event)
     
     printMsg:bool=False
+
     if event.key == 'd': 
         _debugLogOSCActivity = False
         printMsg=True
     elif event.key == 'D': 
         _debugLogOSCActivity = True
         printMsg=True
-    if event.key == 'x': 
+    elif event.key == 'x': 
         _theremin.Stop()
         printMsg=True
     elif event.key == 'X': 
         _theremin.Start()
         printMsg=True
+    elif event.key == 'o': 
+        print(f"BPD model mood: {_modelToUse.ModelState.BpdMood}, Treatment model effect: {_modelToUse.ModelState.BpdTreatmentEffect}")
+    elif event.key == 'O': 
+        print(f"BPD model mood: {_modelToUse.ModelState.BpdMood}, Treatment model effect: {_modelToUse.ModelState.BpdTreatmentEffect}")
     
     if printMsg:
         print(f"Debug log incoming OSC messages = {_debugLogOSCActivity}, Theremin is playing: {_theremin.IsPlaying}")
@@ -286,13 +292,13 @@ def SetupModelConfigurations():
                                                     qPmax=10.0,
                                                     qNmin=2.5, 
                                                     qNmax=7.0,
-                                                    lamb=4,
-                                                    dt=0.001,
+                                                    lamb=0.5,
+                                                    dt=0.0015,
                                                     tmin=1.0, 
                                                     tmax=5.0,
                                                     injectMode='tilt_to_PN',
                                                     delay_seconds=0.02,
-                                                    g_gain=0.2                                                    
+                                                    g_gain=0.07                                                    
                                                 )
                                                 )
 
@@ -307,17 +313,32 @@ def SetupModelConfigurations():
                                                     qPmax=10.0,
                                                     qNmin=2.5, 
                                                     qNmax=7.0,
-                                                    lamb=4,
-                                                    dt=0.001,
+                                                    lamb=0.5,
+                                                    dt=0.0015,
                                                     tmin=1.0, 
                                                     tmax=5.0,
                                                     injectMode='tilt_to_PN',
                                                     delay_seconds=0.02,
-                                                    g_gain=0.2                                                    
+                                                    g_gain=0.07                                                    
                                                 )
                                                 )
     
     # beyond t=20 seconds, or in general, if no 'active' model configuration has been found, a default BPModel2Configuration will be used
+    _modelConfigurationTracker.DefaultConfiguration = BPDModel2Configuration(
+                                                    g1=3.0, 
+                                                    g2=3.0,
+                                                    qPmin=10.0, 
+                                                    qPmax=10.0,
+                                                    qNmin=2.5, 
+                                                    qNmax=7.0,
+                                                    lamb=0.5,
+                                                    dt=0.0015,
+                                                    tmin=1.0, 
+                                                    tmax=5.0,
+                                                    injectMode='tilt_to_PN',
+                                                    delay_seconds=0.02,
+                                                    g_gain=0.07                                                    
+                                                )
 
     _modelConfigurationTracker.PrintConfigurationInfo()
 
@@ -343,8 +364,9 @@ if __name__ == '__main__':
     print(f'=============')
     _modelToUse.print_key_info()
     _treatmentToUse.print_key_info()
-    print(f'{os.path.basename(__file__)}: d/D = debug printing incoming OSC message info off/on')      
+    print(f'{os.path.basename(__file__)}: d/D = Debug printing incoming OSC message info off/on')      
     print(f'{os.path.basename(__file__)}: x/X = Theremin sound generation off/on')      
+    print(f'{os.path.basename(__file__)}: o = Debug print model state')      
     print()
     input('Press ENTER to continue...')
     print()
